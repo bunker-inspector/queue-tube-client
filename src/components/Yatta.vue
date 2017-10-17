@@ -70,7 +70,8 @@ export default {
       player: null,
       nextToken: null,
       googleSignInParams: {
-        client_id: '276948334679-5av2u6kdbp3t2cubjkl8d2989f0l23nt.apps.googleusercontent.com'
+        client_id: '276948334679-5av2u6kdbp3t2cubjkl8d2989f0l23nt.apps.googleusercontent.com',
+        scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl'
       }
     }
   },

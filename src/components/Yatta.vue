@@ -127,7 +127,7 @@ export default {
             part: 'snippet',
             channelId: selectedChannel,
             publishedAfter: (new Date(0)).toISOString(),
-            maxResults: 1
+            maxResults: 50
           },
           requestData = _.cloneDeep(vm.requestData)
 
@@ -135,7 +135,9 @@ export default {
 
           vm.$http.get(SEARCH, requestData)
           .then(response => {
-            resolve(new Date(response.body.items[0].snippet.publishedAt))
+            let idx = Math.floor(Math.random() * response.body.items.length)
+            console.log(idx)
+            resolve(new Date(response.body.items[idx].snippet.publishedAt))
           })
         }),
         // Get most recent video from channel

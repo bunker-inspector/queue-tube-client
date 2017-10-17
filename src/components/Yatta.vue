@@ -7,15 +7,26 @@
       v-if="!signedIn">
       Sign in with Google
     </g-signin-button>
-      <div v-if="videoId">
-        <youtube
-          :video-id="videoId"
-          @ready="videoReady"
-          @paused="videoPaused"
-          @ended="videoEnded">
-        </youtube>
-        <button @click="getRandomVideo">Skip</button>
+    <div v-if="playlist.length > 0">
+      <youtube
+        :video-id="playlist[0].id.videoId"
+        @ready="videoReady"
+        @paused="videoPaused"
+        @ended="videoEnded">
+      </youtube>
+      <button @click="videoSkip">Skip</button>
+      <div>
+        Up Next
       </div>
+      <ol>
+        <li v-for="(video, index) in playlist">
+          <div v-if="index >= 1">
+            {{ video.snippet.channelTitle }} - {{ video.snippet.title }}
+            <img :src="video.snippet.thumbnails.default.url">
+          </div>
+        </li>
+      </ol>
+    </div>
   </div>
 </template>
 
@@ -30,6 +41,8 @@ import _ from 'lodash'
 
 const SUBS   = 'https://www.googleapis.com/youtube/v3/subscriptions'
 const SEARCH = 'https://www.googleapis.com/youtube/v3/search'
+
+const PLAYLIST_LENGTH = 10
 
 Vue.use(GoogleSignInButton)
 Vue.use(VueResource)
@@ -50,7 +63,7 @@ export default {
       user: null,
       signedIn: false,
       gotAllChannels: false,
-      videoId: false,
+      playlist: [],
       channelData: [],
       channelIds: [],
       requestData: {},
@@ -75,6 +88,10 @@ export default {
         })
 
         this.getRandomVideo()
+      })
+
+      this.$watch('playlist', newVideo => {
+        if (this.playlist.length < 10) this.getRandomVideo()
       })
 
       this.$watch('nextToken', newToken => {
@@ -127,7 +144,7 @@ export default {
             part: 'snippet',
             channelId: selectedChannel,
             publishedAfter: (new Date(0)).toISOString(),
-            maxResults: 50
+            maxResults: 1
           },
           requestData = _.cloneDeep(vm.requestData)
 
@@ -135,9 +152,7 @@ export default {
 
           vm.$http.get(SEARCH, requestData)
           .then(response => {
-            let idx = Math.floor(Math.random() * response.body.items.length)
-            console.log(idx)
-            resolve(new Date(response.body.items[idx].snippet.publishedAt))
+            resolve(new Date(response.body.items[0].snippet.publishedAt))
           })
         }),
         // Get most recent video from channel
@@ -168,12 +183,13 @@ export default {
           part: 'snippet',
           channelId: selectedChannel,
           publishedAfter: randomDate(startTime, endTime).toISOString(),
-          maxResults: 1
+          maxResults: 50
         }
 
         vm.$http.get(SEARCH, requestData)
         .then(response => {
-          vm.videoId = response.body.items[0].id.videoId
+          let idx = Math.floor(Math.random() * response.body.items.length)
+          vm.playlist.push(response.body.items[idx])
         })
       })
     },
@@ -183,7 +199,7 @@ export default {
       this.player.playVideo()
 
       const vm = this
-      this.$watch('videoId', () => {
+      this.$watch('playlist', () => {
         vm.player.playVideo()
       })
     },
@@ -194,12 +210,13 @@ export default {
 
     videoEnded () {
       this.getRandomVideo()
-    }
-  },
+      this.playlist.shift()
+    },
 
-  computed: {
-    videoEmbed: function () {
-      return `https://www.youtube.com/embed/${this.videoId}?autoplay=1`
+    videoSkip () {
+      this.playlist.shift()
+      this.getRandomVideo()
+      this.player.playVideo()
     }
   }
 }

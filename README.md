@@ -1,4 +1,4 @@
-# yatta
+# queue-tube
 
 > A user-based YouTube playlist generator
 
